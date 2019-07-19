@@ -1,0 +1,117 @@
+\chapter{Strategies for improvement}
+\label{chap:improving the system}
+
+
+\section{Overview}
+
+In the last chapter we discussed the process of building a deep reinforcement learning based query reformulation system based on the framework of Nogueira \& Cho \cite{nogueira2017task}. Initially we built a system following the description provided in the original paper, the resulting system was capable of solving small scale toy problems, but failed to produce similar results as published when faced with a more complex problem. We acquired additional information provided by the authors that were not published, and implemented the system, resulting in improvement of training performance. 
+
+The second implementation of the reformulation system performs as good as the raw search benchmark on training data. This is a notable improvement in performance compared to the first implementation, however, We observe that the agent has a tendency to converges to a local optimum, learning a policy of taking no actions for the vast majority of queries presented after failing to find a policy which improves scoring during initial stages of training. The result is improvement caused by reformulating a small subset of all queries presented to the agent. We name this issue the ``no-op’’ problem. 
+
+In this chapter we discuss our approach in addressing this problem and an attempt to improve the effectiveness of the agent. We first analyse the ``no-op’’ problem in the context of reinforcement learning, and identify challenges to the agent learning effectively. We then present  a three-part training scheme aimed to mitigate the effect of the ``no-op'' problem.  
+
+
+\section{Improve our understanding of the problem}
+
+
+After our correspondence clarifying the problem framing with Nogueira, whose theoretical framework we base our system on, it became apparent that the task performed by the agent is a combinatorial optimization problem.The action space scales exponentially with the number of candidate terms an agent faces. Consider an instance of the query reformulation problem with a candidate term set of size $n$, and there exists a ``perfect query'', which would yield the maximum attainable reward. If every single configuration of these candidate terms are to be considered, it would create $2^{n}$ number of possible actions. Reward signals are sparse in this action space, vast majority of this action space would be filled with noise terms which would worsen the performance of the reformulated query.  
+
+The agent must learn to choose one good performing configuration among the rest, in a single shot, non-iterative manner. The high level of complexity of the problem and the one-shot nature of query reformulation makes the problem truly challenging--there is no notion of incrementally improving the policy through trial and error.
+
+Indeed, in previous literature deep reinforcement learning has been applied successfully to problems with high complexity, such as controlling an agent in complex environments to accomplish various tasks. For example, training an agent to play video games such as Pong or Doom. These problems often have a complex environments with a large number of states, however, the common trait shared by these problems is that although the number of states are large, the number of available actions at each state is small. 
+
+Suppose we model a reinforcement learning problems as a tree, where each node represents a state, each branch represent actions available, and the leaves are terminal states. Then those problems with a large number of states, but a small number of actions will be a tree that is deep, but has a low branching factor.  
+
+In the problems mentioned above, when an agent has reached a desirable state with a high reward, actions, leading up to the state are rewarded because there is a trajectory in the tree from the root for the agent to trace. In contrast, our query reformulation problem has a single state, and an extremely large action space. In a tree representation, this problem is the equivalent of a tree with depth of 1, and a branching factor of $2^{k}$.  Furthermore, each new query can effectively be considered as a new tree, experience acquired from reformulating other queries would help up to a certain extent, though in essence the agent faces a new instance of the problem with each new query presented. With a large enough set of training data, we can only hope the agent learns some pattern that maps useful terms to a query. 
+
+If we consider the problem from this perspective, it becomes more understandable why the agent would choose no action at all when faced with a large number of potential actions. When desirable actions are distributed in a sparse manner, and the agent fails to reach any reward improving actions in earlier stages of training, it is a valid strategy for the agent to choose no candidate terms for some queries, as choosing to append terms appears to worsen the performance.
+
+\section{Identify challenges our system faces}
+
+Although earlier iterations of our reformulation system did not outperform published results, valuable insights were gained through preliminary experiments nevertheless. We identified three major challenges preventing the agent from learning effectively. These are large action space, one shot nature of query reformulation, and the spiralling effect between the policy network and the value network. 
+
+The first insight gained was that the agent is capable of learning an optimal policy if the action space is sufficiently small. In the trivial experiments ran by the first version of the system, where the task was simply to pick one term that increases the performance of the whole query, the agent succeeded. This confirms that the agent is capable of following the gradient in the policy space which will lead to greater rewards. The agent fails when it comes to dealing with large action space.  As the number of action choices increased, the output of the agent became noticeably noisy. The agent converges to a policy of learning to either include all the candidate terms, or none of it based on the query. Query's that retrieved documents with higher percentage of relevant terms resulted in better performance. 
+
+We reasoned that we must create a condition for the agent to be able to separate actions which lead to a desirable outcome from actions which are detrimental to the goal of the agent in a complex action space. 
+
+Secondly, a typical reinforcement learning problem consists of many stored tuples of state, action, reward and next state. This information is important as it allows the agent to form a mapping between the action it took and the consequences of these actions, in the form of observation, which consists of reward and the following state the environment is in.  For many deep reinforcement learning algorithms, it is crucial to keep a memory buffer to store past histories of State-Action-Reward-Next State tuples, and use these instances of past experience to enhance the agent’s learning abilities. For some algorithms, such as DQN\cite{mnih2015human}, the core factor leading to the agent’s improved performance is the way these memory slices are sampled. 
+
+Unfortunately, due to the nature of query reformulation, the observation is incomplete. The agent receives a scalar reward after reformulating a query, and receives no further information about the state the environment is in after evaluating the query. We considered a possibility of training the agent to incrementally reformulate a query, feeding the intermediary query to the agent as a new state, and the search engine’s evaluation of the intermediary query as the reward. However, we decided this was not a sensible idea, as it would increase training time by orders of magnitude, and this task bears little resemblance from the actual task we want the agent to perform, which is single shot query reformulation.  
+
+Thirdly, we observe a close correlation between the policy network’s output and the value network’s output. 
+
+Consider the loss function for the policy estimator in equation \ref{eq:1} :
+
+\begin{equation}\label{eq:1}
+(R - \bar{R}) - \sum_{t_i \in T} log(t_i|q_0) 
+\end{equation}
+
+
+Which states that, if the actual reward, $R$ achieved by the reformulated query, $T$, is greater than the predicted reward, $\bar{R}$, then the negative log likelihood of all terms in this query decreases, which in turn increases the likelihood of these terms being selected in the future. Conversely, if $\bar{R} > R$, then all terms $t$ in the reformulated query $T$ are made to be slightly less likely to be chosen by the agent in the future.  
+
+In turn, the output of the value predictor, $\bar{R}$, is influenced by the outcome of the reformulation, $R$. The loss function adjusts the prediction $\bar{R}$ towards the value of the ``true reward'', $R$.
+
+\begin{equation}
+C_2 = \frac{1}{n}\sum_{1_i}^{n}(R_i-\bar{R_i})^2
+\end{equation}
+
+
+In an optimal scenario, $\bar{R}$ would be sufficiently close to the expected reward the agent could receive by reformulating the query, and the difference between $\bar{R}$ and $R$ would be sufficiently small, such that the inclusion of terms that contributes an increase in the reward, $R$ would be recognized by the agent immediately, this would lead to the agent increasing the likelihood of these terms being selected again in the future.
+
+
+
+Conversely, in a suboptimal case, where there is a significant difference between the predicted reward, $\bar{R}$ and actual reward, $R$, the agent’s performance is likely to get worse over time. 
+
+If the value network under-predict the amount of reward that is obtainable from the environment significantly. The agent would receive false positives on the reward it is receiving.  The policy network will increase the likelihood of all terms in the reformulated query, regardless whether they are truly useful terms that leads to a better scoring query, or noise terms that will lead to a worse scoring query. Likewise, consistent over prediction from the value predictor means that all terms selected in a reformulated query are weighted down regardless of utility. Neither of the above cases are constructive in helping the agent filter out noise terms from useful terms in the candidate set. 
+
+Since the actual reward, $R$, is the ground truth in the loss function for $\bar{R}$ , if the agent chooses unfavourable actions leading to suboptimal outcomes, the value network would also converge to a poor local optimum, over many training iterations, the agent is ``convinced’’ that no higher performance is achievable from the environment. 
+
+
+In the final implementation of the system we seek methods to overcome or reduce the effect of these challenges and improve the agent's effectiveness. 
+
+
+
+
+\section{Consulting literature}
+
+We consult relevant literature for existing techniques on ways to mitigate these issues outlined above, particularly, how to adapting a reinforcement learning agent to work in an environment with large action space, where reward is sparse. 
+
+The problem of dealing with a large action space has been explored previously by Dulac-Arnald et al\cite{dulac2015deep}, who proposed the Wolpertinger algorithm, using K Nearest Neighbours to group the large number of actions into ``protoactions’’ by a similarity measure, thereby reducing the size of the action space. Their experiments showed that considering this subset of actions will lead to sufficient performance, while reducing the complexity of the problem. Lillicrap et al\cite{lillicrap2015continuous}proposed Deep Deterministic Policy Gradient, a method used to solve problems with continuous action space in deep reinforcement learning, showing robust performance on a range of continuous control tasks by keeping a target network and updating the main networking using the parameter learnt from the target network. Zahavy et al\cite{zahavy2018learn} proposed a model, AE-DQN (Action elimination Deep Q network) where an agent would learn to predict invalid actions from a large action space and rules these out. However, all of these method outlined above requires a stored memory buffer of mapping between state, action, reward, and the following state. The single-state, one shot nature of our problem makes these approaches not suitable for our problem. 
+
+Another approach to reducing the action space is to use heuristics to guide the action selection process. Bianchi et al(2014) \cite{bianchi2004heuristically}first proposed the idea of heuristically accelerated Q-learning,where a heuristics function is used to guide action selection in reinforcement learning. This idea was further developed by Bianchi et al(2015)\cite{bianchi2015transferring}, which proposed a transfer learning based meta algorithm to speed up learning. The agent would first learn on a simpler task to develop domain specific heuristic before training on the target problem. A similar approach was used in the development of AlphaGo\cite{silver2016mastering}, where the agent first trained on an existing dataset of human go player’s past games to learn the rules of the game, before using reinforcement learning and self-play to reach state of the art performance. 
+
+This latter approach inspired the development of our proposed improvement to the query reformulation system. We maintain this latter approach is a sensible approach to our problem. If we draw upon a human learning analogy, it would certainly be more sensible to train a driver on domain specific heuristics such as the road code, vehicle operation, and possibly basic physics before letting the person ``train live’’ by driving on the road.
+
+\section{3 stage training scheme}
+
+\subsection{Bootstrap policy network with KL divergence score}
+Inspired by the use of heuristics present in previous literature, we develop a method where we first train the agent to learn domain specific heuristic in the field of information retrieval before training on the task of query reformulation. 
+
+We use Kullback-Leibler divergence (KL-divergence) as a heuristic to tell us how likely a candidate term is relevant to a query. From a deep learning perspective, this can be thought of as way of biasing the initialisation of weights before the agent starts to learn with reinforcement learning mechanism to decrease the likelihood of the agent being stuck in a local optimum. From an information retrieval perspective, we combine the effect of ATIRE's Pseudo Relevance feedback with reinforcement learning, using the latter to fine tune the system.
+
+Our training scheme consists of three stages.  In the first stage, we train the policy network of the agent using KL divergence score of terms.  We use ATIRE’s built in function to generate the KL divergence score of terms in the top 10 documents returned by the initial query. We take this value as a heuristic indication to how likely a terms is to be ``useful'' to the agent. We normalize the list of score so each score is between 0 and 1 and use it as a ground truth label. We freeze updates on the value network during this process, and train the policy network to predict the KL divergence score of terms. 
+
+We train until training loss is at a sufficiently low value, in our experiments we stopped once the loss is below 0.01, the number of epochs required is proportional to the data size used. As the action output of the agent is based on sampling the policy predictor's scoring of how likely the term would lead to improved performance. Pre training correlates the initial probability score of terms to their KL-divergence score instead of initializing all candidate terms equally. This bias the agent to select terms that are likely to lead to good performance. Terms a lower KL divergence value are weighted down during this process, creating an initial separation between useful and noise terms. 
+
+\subsection{Pre training the value estimator}
+
+The second part of our proposed training method is to pre train the value network. We have previously identified that inaccurate estimation from the value network may lead to catastrophic spiralling effect between the agent's policy and value output, resulting in poor learning results. From experiments conducted using our second implementation, we discovered the importance of always including the raw query when evaluating the reformulated query, because the agent's value predictor must learn the value of the original query to notice any improvements from reformulated queries. Only when the agent can predict with reasonable accuracy how good it is to be in a default state, it can begin to update the weights in the correct direction. For example, if the agent chose some candidate terms which increased the reward from the default value, then the weights would be updated such that these terms will get increased likelihood of being selected. 
+
+To achieve this, we freeze the weights in the policy network, and output 0 for all candidate terms for a number of epochs, depending on the size of the dataset used. We train the value estimator's output to predict the ``no op'' value of each query. The loss function is the mean squared error between the prediction and the reward of the initial query returned by the search engine, defined as:
+
+\begin{equation}
+C_2 = \frac{1}{n}\sum_{1_i}^{n}(R_i-\bar{R_i})^2
+\end{equation}
+
+Where $n$ is the size of the learning batch, $R$ is the state value prediction, $\bar{R}$ is the actual reward returned by the search engine when the agent appends no extra term to the original query. We train the agent's value estimator until the loss is sufficiently low and prediction of the reward achieved by the initial query is sufficiently accurate. 
+
+
+\subsection{Live training with reinforcement learning}
+
+In the final phase we train the agent on the task of query reformulation using the reinforcement learning mechanism outlined in the previous chapter.
+
+
+\section{Conclusion}
+
+In this chapter we first analyse the no op problem facing us from the last iteration, identify challenges that may prevent the agent from learning effectively. The most significant challenges being dealing with large action space, the single state nature of the query reformulation problem, and the potentially catastrophic correlation between policy network and value network. After identifying the obstacles, we consult relevant literature and prosed a three-stage training scheme that injecting heuristics from information retrieval into the problem in order to mitigate the effect of these challenges. Our preliminary experiment on a small set of queries showed improvement during training.  In the next chapter we present the final results of applying this training scheme to larger datasets.
+

@@ -1,0 +1,52 @@
+\chapter{Introduction}
+\label{chap:intro}
+
+\section{Overview}
+
+Satisfying users' information needs is the primary goal of information retrieval. Connecting users with high quality information that fits their purposes has direct and observable impact in the real world. At any given moment a large number of users use a web search engine for a wide range of tasks ranging from finding relevant academic papers to finding the nearest restaurant. 
+
+This goal is often achieved by deploying effective techniques to search and rank results, based on relevance to the user. However, determining what is relevant to the user is an inherently difficult problem. A study on web search found that the average web query is only 2.4 words in length \cite{spink2001searching}.  This problem of retrieving,ranking,and presenting documents based on users' information needs deduced from a short query is known as the \textit{adhoc retrieval problem}. Modern information retrieval systems must develop relevance modelling techniques which can effectively ``guess'' users' intentions from such limited information. 
+
+These issues are some of the core motivating factors in information retrieval research.  Over the years information retrieval researchers have been developing models and techniques for finding and placing content likely to be relevant to the user to the top of the results list. Some techniques focus on the ranking of documents, using ranking paradigms such as vector space based models and statistical language based models, and term weighing functions such as TF.IDF\cite{Salton:1975:VSM:361219.361220} and BM25\cite{harman1995overview}. Other methods, such as relevance feedback, allow the user to provide additional information to indicate relevant and non relevant documents, refining the results list even further by re-ranking results. Pseudo relevance feedback builds on top of this further by removing the need for additional user input. Popular methods in this field include automatic query reformulation and thesaurus based term expansion. The pursuit of improvement in effectiveness of adhoc retrieval is an active area in research, where ongoing efforts attempt to improve the state of search.
+
+\section{Motivation}
+
+Despite continuing effort in making improvement in adhoc retrieval in recent years, several studies suggests there has been little to no evidence of significant improvement in retrieval quality since the 1990s, when BM25 was first introduced. BM25 and it's variants are considered to be the state of the art in ranked retrieval, and no other approach has been found to systematically outperform the performance of BM25\cite{trotman2014improvements}. In 2009, Armstrong et al\cite{armstrong2009improvements} conducted a large scale, systematic comparison across five publicly available search engines, 17 different configurations, using 9 standard datasets, and found no significant improvement in effectiveness of adhoc retrieval since 1994. Trotman \& Keeler(2011) showed that the reason for this observation is that BM25 performs close to human level, and that there is little room for significant improvement in the field of adhoc retrieval.
+
+Given these evidence that BM25 is perhaps the upper bound of adhoc retrieval, we were intrigued by the work of Nogueira \& Cho\cite{nogueira2017task}, who claimed that it is possible to achieve superior performance in retrieval effectiveness by framing query reformulation as a deep reinforcement learning problem. Nogueira \& Cho trained a deep neural network model with reinforcement learning, and achieved Mean Average Precision higher than baselines with BM25.
+
+In recent years, Deep Reinforcement Learning has shown promising results in many areas. Reinforcement learning presents a problem as an interactive environment and lets a learning agent interact with it.  The agent explores the environment through interaction, gathering further information about the task from the feed back received, eventually leading to improved performance. 
+
+Though a combination of reinforcement learning methodology with the generalization power of deep neural networks, it has been shown that a well-trained reinforcement learning agent is capable of solving several complex problems.  Notable examples include video game control \cite{mnih2013playing} ,and winning highly complex board games against top human players\cite{silver2016mastering}.
+
+The motivation of this thesis stems from a curiosity at the effectiveness of this approach. Given the previous success of deep reinforcement learning, it is plausible that this novel approach can yield superior results. However, there is strong evidence that BM25 is a strong baseline that has not been systematically outperformed by other methods. Given the two claims, we set out to collect further evidence on the topic by conducting our own set of experiments. 
+
+\section{Research questions(In progress..)}
+In this thesis, we set out to gather further evidence to evaluate whether deep reinforcement learning is a suitable option to the adhoc retrieval problem. To do so we produce our own deep reinforcement learning agent for query reformulation based on the framework of Nogueira \&Cho, and conduct experiments to evaluate the effectiveness, efficiency, and robustness of this approach. 
+
+
+
+\subsubsection{Still working on this part...}
+
+
+We approach this first by producing a deep reinforcement learning based query reformulation system, based on the framework proposed by Nogueira and Cho\cite{nogueira2017task}....
+
+%we discovered that reproducing work in the area of deep reinforcement learning is inherently challenging due to the stochastic nature of this approach. 
+%
+%conduct experiments and assess the suitability of this method.
+%
+%Specifically, this thesis conducts the following investigation:
+
+
+\begin{itemize}
+	\item What are the steps required to reproduce a deep reinforcement learning based system?
+	\item How effective is a system based on this approach compared to existing baselines?
+\end{itemize}
+
+
+
+
+\section{Thesis Organization}
+In chapter \ref{chap:lit} we provide relevant background on information retrieval and neural networks...etc
+
+

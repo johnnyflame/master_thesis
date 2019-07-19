@@ -1,0 +1,55 @@
+\chapter{Conclusions and future work--just ideas at this point}
+\label{chap:conclusion}
+
+
+\section{Conclusions drawn(spit balling at this stage)}
+
+\begin{itemize}
+	\item The inherently unstable nature of DRL makes the system unable to outperform baselines on a consistent basis.
+	\item We argue that it is almost impossible to reproduce a deep reinforcement learning system. Perhaps an exact replication, using the exact same environment, parameter, and random seed is possible. 
+	\item There is alot of value in reporting negative results in experiments, it would save much research time. 
+	\item we conclude that deep reinforcement learning is highly experimental, and has limited utility in a production environment where search engine is expected to perform in a robust fashion.
+	\item Container based technology, such as Docker, might be the most sensible way to conduct deep reinforcement learning based research, this would allow all variables to be kept the same.
+	\item We maintain that it may not be a good idea to use RL for problems with existing non-RL solutions. (Expand this using LeCun's cake analogy at 2016 NIPS)\footnote{https://www.youtube.com/watch?v=Ount2Y4qxQo}
+\end{itemize}
+
+
+
+
+
+\section{An analysis of the problem}
+This problem is not typical deep reinforcement learning problem. 
+
+Typically, reinforcement learning works well when there are many states, and relatively few actions available at each state. A good example of this is controlling a video game character. There are many states (commonly represented as frames of image) between the start and end of a game session, while at each intermediate state there are only a handful of possible actions to pick from (for example, different directions to walk). 
+
+The problem of query reformulation is different from the above description, there are very few states. In fact, there is only a single state, which is the raw original query. Whether the candidate terms could count as a state has been a topic of debate during the development of the system. In any case, there is one state and many actions to choose from. In the case where there are 200 candidate terms to choose from there would be $2^{200}$ possible actions to take. This makes the problem sound almost unreasonable. However, the paper we are basing our methods on claims that this problem could be addressed with deep reinforcement learning. 
+
+The fact that there is only a single state means that the agent does not learn to associate states with values (how good it is to be in a certain state). This is the reason that policy gradient method must be used to directly optimize the policy, which is which action to take given the current state. 
+
+If the state is only the raw query, then the action space changes each time the query is being drawn for training, as the candidate document is selected by randomly sampling the top document. This poses a challenging issue to the agent.
+
+Overall, this particular problem poses many challenges to a learning agent. We remain sceptical whether deep reinforcement learning is indeed the right method to use to solve this problem. However, given claims of superior performance we decide it is worthwhile to investigate whether this type of solution could work on this problem. 
+
+With these thoughts in mind we begin to develop the first iteration of our system.
+
+Tools such as docker could potentially be very useful in terms of improving the reproducible of experiments. 
+
+\section{Further work}
+
+
+Different queries have different potential to improve. It would be very useful to identify the type of queries likely to benefit from such reformulation, and ones that are likely to worsen, and only improve the ones that are likely to get better. Perhaps a deep learning based method would be suitable for such pursuit.
+
+
+
+
+
+
+
+\begin{itemize}
+
+	\item Measurment of query potential?
+	\item More reproducibility studies. CLEF exists in IR for this purpose, perhaps a similar initiative for deep learning would be very beneficial to the community.
+    \item It would be incredibly beneficial to science to publish negative results, and the experimental setup which resulted in these results
+    \item A holistic approach in explaining how the results were acquired. Don't leave out small details/tricks/hacks etc
+    \item Perhaps virtualization is a sensible idea. Using tools such as Docker containers, an experiment should in principle be reproducible anywhere.
+\end{itemize}

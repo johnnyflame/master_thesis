@@ -1,0 +1,117 @@
+\chapter{Evaluating the three stage training scheme}
+\label{chap:results}
+
+
+
+\section{Overview}
+
+In this chapter we present experimental results based on the three stage training scheme we proposed in the previous chapter. 
+
+
+
+
+
+\section{Final experiments}
+The model used in this iteration is similar to the one used in the second iteration, with a small number of changes.
+
+
+\subsection{Set up}
+
+\subsubsection{Data sets}
+
+MSA + WSJ
+
+This time we use a test set as well.
+
+\subsection{Baselines}
+
+
+
+
+\subsubsection{Grid search over BM25 parameters}
+
+For the final set of experiments, we wanted to make sure that the baseline is well tuned. We perform grid search on the two parameters of BM25, $k1$ and $b$. 
+
+
+
+\todo{Present table}
+
+
+
+
+\subsection{Model hyper parameters}
+
+
+
+
+
+
+
+\subsection{Optimizer}
+As per the previous implementations, we used ADAM optimizer. We discovered that it is important to reset the optimiser between each stage of training outlined above due to the nature of ADAM optimizer. 
+
+
+
+
+\section{Training process}
+
+
+\todo{pseudo code of the training sets}
+
+
+
+
+
+
+To confirm that our method is effective, we conducted a small scale experiment on 100 queries drawn from the WSJ dataset. During training, the agent is able to outperform both the raw search baseline and ATIRE’s PRF. The results are shown in FIGN.
+
+
+
+
+
+
+
+
+
+
+\section{Results }
+
+
+\subsection{Is DRL inherently unstable?}
+
+\subsection{Can a DRL experiment be reproduced and yield similar results?}
+
+
+\subsection{Incomplete reporting}
+
+Through our corrospondance with Nogueira many insight regarding experimentation were revealed...
+
+However for whatever reason the 
+
+
+\section{Discussion}
+
+
+
+\section{Why is it so difficult to repruduce this system?}
+\subsection{Instability of DRL}
+
+We observe that using different random seeds produces results 
+
+
+
+\subsection{Does the agent actually learn to be useful}
+
+There was a lack of significance testing or per query improvement measurement in the work of Nogueira and Cho \cite{nogueira2017task}, so it remains unknown whether the improvement claimed was an overall improvement, or based on extreme values similar to the performance of our first system.
+
+
+
+\subsection{Reproducibility crisis}
+
+In recent years efforts have been made in the information retrieval community towards a reproducible baselines \cite{lin2016toward}. In the field of Deep Reinforcement Learning reproducibility is equally important. A recent study by \cite{henderson2017deep} addresses the issue that reproducing Deep Reinforcement Learning experiments is seldom a straightforward process. Significant change in performance can be observed by changes as trivial as switching the random seed whi	le keeping every other aspect of the system constant.
+
+There are many factors to consider which contributes to this problem, such as  due to both the environment being non deterministic, and that the nature of reinforcement learning being sample based, which requires bootstrapping, making it unstable by nature.
+
+
+
+
